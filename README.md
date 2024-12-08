@@ -66,22 +66,25 @@ Ensure you have Python 3.x installed on your machine. You can download it from [
 
 It's recommended to use a virtual environment to avoid conflicts with other projects.
 
-1. Install `virtualenv`:
-    ```bash
-    python -m pip install --user virtualenv
-    ```
-2. Create a virtual environment:
-    ```bash
-    virtualenv venv
-    ```
-3. Activate the environment:
+1. Create a virtual environment:
     - **Windows**
         ```bash
-        .\venv\Scripts\activate
+        py -m venv venv\
         ```
     - **Linux or Mac**
         ```bash
-        source venv/bin/activate
+        python3 -m venv venv/
+        ```
+2. Activate the environment:
+    - **Windows**
+        ```bash
+        PS> venv\Scripts\activate
+        (venv) PS>
+        ```
+    - **Linux or Mac**
+        ```bash
+        $ source venv/bin/activate
+        (venv) $
         ```
 
 ### Installing Dependencies
