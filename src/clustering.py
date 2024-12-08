@@ -275,6 +275,23 @@ def visualize_movie_clusters(data, labels, title='Movie Clusters'):
     plt.legend(title='Cluster')
     plt.show()
 
+# verify Clustered Data
+
+def verify_clustered_data(processed_data_path):
+    """
+    Verify the clustered data by loading and displaying basic information.
+    
+    Parameters:
+        processed_data_path (str): Path to the processed data directory.
+    """
+    users_clustered = pd.read_csv(os.path.join(processed_data_path, 'users_clustered.csv'))
+    movies_clustered = pd.read_csv(os.path.join(processed_data_path, 'movies_clustered.csv'))
+    
+    print("Users with Clusters:")
+    print(users_clustered.head())
+    print("\nMovies with Clusters:")
+    print(movies_clustered.head())
+
 # Save Clustered Data
 
 def save_clustered_data(users_with_clusters, movies_with_clusters, processed_data_path):
@@ -359,3 +376,4 @@ def cluster_users_and_movies(processed_data_path, user_k=5, movie_k=10):
     save_clustered_data(users_with_clusters, movies_with_clusters, processed_data_path)
     
     print("Clustered data saved successfully!")
+    verify_clustered_data(processed_data_path)
