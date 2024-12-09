@@ -100,6 +100,110 @@ If installed packages add them to requirements.txt. To add all pip packages:
 pip freeze > requirements.txt
 ```
 
+## Usage
+
+### Running the Recommendation System
+
+1. **Navigate to the Project Directory:**
+```bash
+cd movie-recommendation-system
+```
+2. **Ensure the Virtual Environment is Activated:**
+    - **Windows**
+        ```bash
+        PS> venv\Scripts\activate
+        (venv) PS>
+        ```
+    - **Linux or Mac**
+        ```bash
+        $ source venv/bin/activate
+        (venv) $
+        ```
+3. **Run the Main Script:** The main script orchestrates the data loading, preprocessing, clustering, and recommendation processes.
+```bash
+python main.py
+```
+4. **Interact with the System:** Follow the on-screen instructions to:
+    - View user and movie clusters.
+    - Input a user ID to receive personalized movie recommendations.
+    - Explore data visualizations and insights.
+
+## Example Usage
+```bash
+python main.py
+```
+Upon running, you might see prompts like:
+```bash
+Welcome to the Movie Recommendation System!
+
+Please enter User ID to get recommendations (or 'exit' to quit): 
+
+Top 5 movie recommendations for you:
+1. Toy Story (1995) - Average Rating: 4.5
+2. Star Wars (1977) - Average Rating: 4.4
+3. ...
+```
+
+## Project Structure
+
+```bash
+movie-recommendation-system/
+│
+├── data/
+│   ├── clustering/
+│   │   ├── Movie-Clusters.png
+│   │   ├── User-Clusters.png
+│   ├── processed/
+|   |   ├── movies_clustered.csv
+│   |   ├── movies.csv
+│   |   ├── ratings.csv
+│   |   ├── users_clustered.csv
+│   |   └── users.csv
+|   └── raw/
+|       ├── allbut.pl
+|       ├── mksu.sh
+|       ├── README.md
+|       ├── u.data
+|       ├── u.genre
+|       ├── u.item
+|       ├── u.occupation
+|       ├── u.user
+|       ├── u1.base
+|       ├── u1.test
+|       ├── u2.base
+|       ├── u3.base
+|       ├── u3.test
+|       ├── u4.base
+|       ├── u4.test
+|       ├── u5.base
+|       ├── u5.test
+|       ├── ua.base
+|       ├── ua.test
+|       ├── ub.base
+|       └── ub.test
+│
+├── notebooks/
+│   ├── EDA.ipynb
+│   └── Clustering.ipynb
+│
+├── src/
+│   ├── __init__.py
+│   ├── data_preprocessing.py
+│   ├── clustering.py
+│   └── recommendation.py
+│
+├── tests/
+│   ├── __init__.py
+│   ├── test_data_preprocessing.py
+│   └── test_clustering.py
+│
+├── .gitignore
+├── LICENSE
+├── main.py
+├── README.md
+└── requirements.txt
+```
+
 ## Contributing
 1. Fork the repository.
 2. Create a feature branch (`git checkout -b feature/YourFeature`).
