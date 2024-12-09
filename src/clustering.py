@@ -23,8 +23,8 @@ def load_processed_data(processed_data_path):
         ratings (DataFrame): Ratings information.
     """
 
-    users = pd.read_csv(os.path.join(processed_data_path, 'users.csv'))
-    movies = pd.read_csv(os.path.join(processed_data_path, 'movies.csv'))
+    users = pd.read_csv(os.path.join(processed_data_path, 'users_clustered.csv'))
+    movies = pd.read_csv(os.path.join(processed_data_path, 'movies_clustered.csv'))
     ratings = pd.read_csv(os.path.join(processed_data_path, 'ratings.csv'))
     
     return users, movies, ratings
@@ -33,68 +33,40 @@ def load_processed_data(processed_data_path):
 # User-Based Clustering
 # -------------------
 
-def prepare_user_features(users):
+def prepare_user_features(users, ratings):
     """
-    Prepare user features for clustering.
+    Prepare user features for clustering, including rating statistics.
     
     Parameters:
         users (DataFrame): User information.
+        ratings (DataFrame): Ratings information.
         
     Returns:
         user_features_scaled (ndarray): Scaled user features.
         user_ids (Series): User IDs corresponding to the features.
     """
 
+    # Add rating statistics
+    user_stats = ratings.groupby('user_id').agg(
+        avg_rating=('rating', 'mean'),
+        rating_count=('rating', 'count'),
+        rating_std=('rating', 'std')
+    ).reset_index()
+    
+    users_with_stats = pd.merge(users, user_stats, on='user_id', how='left')
+    users_with_stats['rating_std'].fillna(0, inplace=True)  # Handle users with single rating
+    
     # Select relevant features
-    user_features = users[['age', 'gender', 'occupation']]
+    user_features = users_with_stats[['age', 'gender', 'occupation', 'avg_rating', 'rating_count', 'rating_std']]
+    
+    # Handle any missing values if necessary
+    user_features.fillna(0, inplace=True)
     
     # Scale the features
     scaler = StandardScaler()
     user_features_scaled = scaler.fit_transform(user_features)
     
-    return user_features_scaled, users['user_id']
-
-def determine_optimal_clusters(data, max_k=10):
-    """
-    Determine the optimal number of clusters using Elbow Method and Silhouette Score.
-    
-    Parameters:
-        data (ndarray): Scaled feature data.
-        max_k (int): Maximum number of clusters to try.
-        
-    Returns:
-        None (plots the Elbow and Silhouette scores)
-    """
-
-    inertia = []
-    silhouette_scores = []
-    K = range(2, max_k+1)
-    
-    for k in K:
-        kmeans = KMeans(n_clusters=k, random_state=42)
-        kmeans.fit(data)
-        inertia.append(kmeans.inertia_)
-        score = silhouette_score(data, kmeans.labels_)
-        silhouette_scores.append(score)
-    
-    # Plot Elbow Method
-    plt.figure(figsize=(12, 5))
-    
-    plt.subplot(1, 2, 1)
-    plt.plot(K, inertia, 'bo-')
-    plt.xlabel('Number of Clusters (k)')
-    plt.ylabel('Inertia')
-    plt.title('Elbow Method for Optimal k')
-    
-    # Plot Silhouette Scores
-    plt.subplot(1, 2, 2)
-    plt.plot(K, silhouette_scores, 'bo-')
-    plt.xlabel('Number of Clusters (k)')
-    plt.ylabel('Silhouette Score')
-    plt.title('Silhouette Scores for Various k')
-    
-    plt.tight_layout()
-    plt.show()
+    return user_features_scaled, users_with_stats['user_id']
 
 def perform_kmeans(data, n_clusters):
     """
@@ -126,7 +98,7 @@ def add_user_clusters(users, labels):
         users_with_clusters (DataFrame): Users DataFrame with cluster labels.
     """
     users_with_clusters = users.copy()
-    users_with_clusters['cluster'] = labels
+    users_with_clusters['user_cluster'] = labels
     return users_with_clusters
 
 def visualize_user_clusters(data, labels, title='User Clusters'):
@@ -179,47 +151,6 @@ def prepare_movie_features(movies):
     
     return movie_features_scaled, movies['movie_id']
 
-def determine_optimal_clusters_movie(data, max_k=10):
-    """
-    Determine the optimal number of clusters for movies using Elbow Method and Silhouette Score.
-    
-    Parameters:
-        data (ndarray): Scaled feature data.
-        max_k (int): Maximum number of clusters to try.
-        
-    Returns:
-        None (plots the Elbow and Silhouette scores)
-    """
-    inertia = []
-    silhouette_scores = []
-    K = range(2, max_k+1)
-    
-    for k in K:
-        kmeans = KMeans(n_clusters=k, random_state=42)
-        kmeans.fit(data)
-        inertia.append(kmeans.inertia_)
-        score = silhouette_score(data, kmeans.labels_)
-        silhouette_scores.append(score)
-    
-    # Plot Elbow Method
-    plt.figure(figsize=(12, 5))
-    
-    plt.subplot(1, 2, 1)
-    plt.plot(K, inertia, 'bo-')
-    plt.xlabel('Number of Clusters (k)')
-    plt.ylabel('Inertia')
-    plt.title('Elbow Method for Optimal k (Movies)')
-    
-    # Plot Silhouette Scores
-    plt.subplot(1, 2, 2)
-    plt.plot(K, silhouette_scores, 'bo-')
-    plt.xlabel('Number of Clusters (k)')
-    plt.ylabel('Silhouette Score')
-    plt.title('Silhouette Scores for Various k (Movies)')
-    
-    plt.tight_layout()
-    plt.show()
-
 def perform_kmeans_movie(data, n_clusters):
     """
     Perform K-Means clustering on movies.
@@ -249,7 +180,7 @@ def add_movie_clusters(movies, labels):
         movies_with_clusters (DataFrame): Movies DataFrame with cluster labels.
     """
     movies_with_clusters = movies.copy()
-    movies_with_clusters['cluster'] = labels
+    movies_with_clusters['movie_cluster'] = labels
     return movies_with_clusters
 
 def visualize_movie_clusters(data, labels, title='Movie Clusters'):
@@ -308,6 +239,7 @@ def save_clustered_data(users_with_clusters, movies_with_clusters, processed_dat
     """
     users_with_clusters.to_csv(os.path.join(processed_data_path, 'users_clustered.csv'), index=False)
     movies_with_clusters.to_csv(os.path.join(processed_data_path, 'movies_clustered.csv'), index=False)
+    print("Clustered data saved successfully!")
 
 # Main Function
 
@@ -331,11 +263,8 @@ def cluster_users_and_movies(processed_data_path, user_k=5, movie_k=10):
     # -------------------
     print("Starting User-Based Clustering...")
     
-    # Prepare features
-    user_features_scaled, user_ids = prepare_user_features(users)
-    
-    # Determine optimal clusters (Optional: Uncomment if you want to visualize)
-    # determine_optimal_clusters(user_features_scaled, max_k=10)
+    # Prepare features with rating statistics
+    user_features_scaled, user_ids = prepare_user_features(users, ratings)
     
     # Perform K-Means
     kmeans_users, user_labels = perform_kmeans(user_features_scaled, n_clusters=user_k)
@@ -356,9 +285,6 @@ def cluster_users_and_movies(processed_data_path, user_k=5, movie_k=10):
     # Prepare features
     movie_features_scaled, movie_ids = prepare_movie_features(movies)
     
-    # Determine optimal clusters (Optional: Uncomment if you want to visualize)
-    # determine_optimal_clusters_movie(movie_features_scaled, max_k=15)
-    
     # Perform K-Means
     kmeans_movies, movie_labels = perform_kmeans_movie(movie_features_scaled, n_clusters=movie_k)
     
@@ -375,5 +301,5 @@ def cluster_users_and_movies(processed_data_path, user_k=5, movie_k=10):
     # -------------------
     save_clustered_data(users_with_clusters, movies_with_clusters, processed_data_path)
     
-    print("Clustered data saved successfully!")
+    # Verify clustered data
     verify_clustered_data(processed_data_path)

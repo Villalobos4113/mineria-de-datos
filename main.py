@@ -3,35 +3,26 @@ import os
 from src.data_preprocessing import preprocess_data
 from src.clustering import cluster_users_and_movies
 from src.recommendation import recommend_movies_user_based, load_clustered_data
+from src.recommendation import evaluate_recommendation_system
 
+def main():
+    # Define paths
+    raw_data_path = os.path.join('data', 'raw')
+    processed_data_path = os.path.join('data', 'processed')
 
-# -------------------
-# SETTINGS
-# -------------------
-
-# Define paths
-raw_data_path = os.path.join('data', 'raw')
-processed_data_path = os.path.join('data', 'processed')
-
-# Processes
-preprocess_data_bool = False
-cluster = False
-
-# -------------------
-# -------------------
-
-def process_data():
     # Create processed data directory if it doesn't exist
     if not os.path.exists(processed_data_path):
         os.makedirs(processed_data_path)
-    
+
     # Run preprocessing
     preprocess_data(raw_data_path, processed_data_path)
 
-def main():
+    # Perform clustering
+    cluster_users_and_movies(processed_data_path, user_k=5, movie_k=10)
+
     # Load clustered data
     users_clustered, movies_clustered, ratings = load_clustered_data(processed_data_path)
-    
+
     # Interactive recommendation
     while True:
         try:
@@ -52,12 +43,13 @@ def main():
             print(str(ve))
         except Exception as e:
             print(f"An error occurred: {str(e)}")
-    
+
+    # Evaluate the recommendation system
+    print("Evaluating the recommendation system...")
+    mae, rmse = evaluate_recommendation_system(processed_data_path)
+    print(f"Mean Absolute Error (MAE): {mae:.2f}")
+    print(f"Root Mean Squared Error (RMSE): {rmse:.2f}")
+    print("\n")
 
 if __name__ == "__main__":
-    if preprocess_data_bool:
-        process_data()
-    if cluster:
-        # Adjust 'user_k' and 'movie_k' as per your requirements or based on EDA
-        cluster_users_and_movies(processed_data_path, user_k=5, movie_k=10)
     main()
