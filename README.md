@@ -154,33 +154,33 @@ movie-recommendation-system/
 │   │   ├── Movie-Clusters.png
 │   │   ├── User-Clusters.png
 │   ├── processed/
-|   |   ├── movies_clustered.csv
-│   |   ├── movies.csv
-│   |   ├── ratings.csv
-│   |   ├── users_clustered.csv
-│   |   └── users.csv
-|   └── raw/
-|       ├── allbut.pl
-|       ├── mksu.sh
-|       ├── README.md
-|       ├── u.data
-|       ├── u.genre
-|       ├── u.item
-|       ├── u.occupation
-|       ├── u.user
-|       ├── u1.base
-|       ├── u1.test
-|       ├── u2.base
-|       ├── u3.base
-|       ├── u3.test
-|       ├── u4.base
-|       ├── u4.test
-|       ├── u5.base
-|       ├── u5.test
-|       ├── ua.base
-|       ├── ua.test
-|       ├── ub.base
-|       └── ub.test
+│   │   ├── movies_clustered.csv
+│   │   ├── movies.csv
+│   │   ├── ratings.csv
+│   │   ├── users_clustered.csv
+│   │   └── users.csv
+│   └── raw/
+│       ├── allbut.pl
+│       ├── mksu.sh
+│       ├── README.md
+│       ├── u.data
+│       ├── u.genre
+│       ├── u.item
+│       ├── u.occupation
+│       ├── u.user
+│       ├── u1.base
+│       ├── u1.test
+│       ├── u2.base
+│       ├── u3.base
+│       ├── u3.test
+│       ├── u4.base
+│       ├── u4.test
+│       ├── u5.base
+│       ├── u5.test
+│       ├── ua.base
+│       ├── ua.test
+│       ├── ub.base
+│       └── ub.test
 │
 ├── notebooks/
 │   ├── EDA.ipynb
