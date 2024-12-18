@@ -36,11 +36,13 @@ def load_processed_data(processed_data_path):
 def prepare_user_features(users, ratings, movies):
     """
     Prepare user features for clustering, including rating statistics and genre taste vectors.
+    The threshold for determining 'liked' movies is now dynamic:
+    It is set to 75% of the user's maximum average rating across genres.
     
     Parameters:
         users (DataFrame): User information.
         ratings (DataFrame): Ratings information.
-        movies (DataFrame): Movies information with genre columns.
+        movies (DataFrame): Movie information with genre columns.
         
     Returns:
         user_features_scaled (ndarray): Scaled user features.
@@ -53,29 +55,55 @@ def prepare_user_features(users, ratings, movies):
         rating_count=('rating', 'count'),
         rating_std=('rating', 'std')
     ).reset_index()
+    user_stats['rating_std'].fillna(0, inplace=True)
 
     users_with_stats = pd.merge(users, user_stats, on='user_id', how='left')
-    users_with_stats['rating_std'].fillna(0, inplace=True)
 
+    # Define genre columns
     genre_columns = ['unknown', 'Action', 'Adventure', 'Animation', "Children's", 'Comedy',
                      'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror',
                      'Musical', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western']
 
-    rating_threshold = 3.75
+    # Merge ratings with movies to get genre info for each rated movie
+    ratings_with_genres = pd.merge(ratings, movies[['movie_id'] + genre_columns], on='movie_id', how='left')
 
-    # Filter ratings for highly rated movies
-    high_rated = ratings[ratings['rating'] > rating_threshold]
+    melted = ratings_with_genres.melt(
+        id_vars=['user_id', 'movie_id', 'rating'],
+        value_vars=genre_columns,
+        var_name='genre',
+        value_name='is_genre'
+    )
+    # Filter rows where the movie actually belongs to the genre
+    melted = melted[melted['is_genre'] == 1]
 
-    # Merge to get genre info of movies rated above threshold
-    high_rated = pd.merge(high_rated, movies[['movie_id'] + genre_columns], on='movie_id', how='left')
+    # Compute user-genre average ratings
+    user_genre_avg = melted.groupby(['user_id', 'genre'])['rating'].mean().reset_index()
 
-    # Aggregate genre info by user (mean of genres for highly rated movies)
-    user_genre_taste = high_rated.groupby('user_id')[genre_columns].mean().reset_index().fillna(0)
+    # Find the maximum average genre rating per user
+    user_max_genre = user_genre_avg.groupby('user_id')['rating'].max().reset_index()
+    user_max_genre.rename(columns={'rating': 'max_genre_rating'}, inplace=True)
 
-    # Merge genre tastes with user stats
-    users_with_taste = pd.merge(users_with_stats, user_genre_taste, on='user_id', how='left')
+    # Merge the max genre rating back to user_stats
+    users_with_threshold = pd.merge(users_with_stats, user_max_genre, on='user_id', how='left')
+    # If a user has no genres rated, max_genre_rating might be NaN. Fill with global average or a default.
+    global_avg = ratings['rating'].mean()
+    users_with_threshold['max_genre_rating'].fillna(global_avg, inplace=True)
 
-    # Fill NaNs for users who did not rate any movie above the threshold
+    # Threshold is 75% of max_genre_rating
+    users_with_threshold['rating_threshold'] = users_with_threshold['max_genre_rating'] * 0.75
+
+    # Merge threshold back to ratings to filter "liked" movies per user
+    ratings_with_threshold = pd.merge(ratings_with_genres, users_with_threshold[['user_id', 'rating_threshold']], on='user_id', how='left')
+
+    # Filter only liked movies
+    liked_movies = ratings_with_threshold[ratings_with_threshold['rating'] > ratings_with_threshold['rating_threshold']]
+
+    # Aggregate genre tastes based on liked movies
+    user_genre_taste = liked_movies.groupby('user_id')[genre_columns].mean().reset_index().fillna(0)
+
+    # Merge genre tastes with users_with_threshold
+    users_with_taste = pd.merge(users_with_threshold, user_genre_taste, on='user_id', how='left')
+    # Fill NaNs for users who did not have liked movies
     users_with_taste[genre_columns] = users_with_taste[genre_columns].fillna(0)
 
     # Select relevant features including genre tastes
@@ -83,7 +111,7 @@ def prepare_user_features(users, ratings, movies):
 
     user_features['gender'] = user_features['gender'].map({'M':0, 'F':1})
     
-    # Handle any missing values if necessary
+    # Handle any missing values
     user_features.fillna(0, inplace=True)
 
     # Scale the features
@@ -91,7 +119,6 @@ def prepare_user_features(users, ratings, movies):
     user_features_scaled = scaler.fit_transform(user_features)
 
     return user_features_scaled, users_with_taste['user_id']
-
 
 def perform_kmeans(data, n_clusters):
     """
